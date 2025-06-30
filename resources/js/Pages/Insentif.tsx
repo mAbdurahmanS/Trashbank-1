@@ -45,6 +45,7 @@ import { Input } from "@/Components/ui/input";
 
 import { useState } from "react";
 import { useForm } from "@inertiajs/react";
+import { Inertia } from '@inertiajs/inertia'
 
 const cards = [
     {
@@ -168,32 +169,46 @@ export default function Insentif({ auth, totalPoints: initialTotalPoints }: Page
             return;
         }
 
-        try {
-            const response = await fetch(route('redeem.item'), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || ''
-                },
-                body: JSON.stringify({
-                    item_id: selectedItem.id,
-                    points_cost: selectedItem.point
-                })
-            });
-            const data = await response.json();
-            if (response.ok && data.success) {
-                setCurrentTotalPoints(data.total_points);
-                setErrorMessage('');
-                setShowAddressDialog(true); // Tampilkan dialog alamat setelah sukses
-                // handleCloseDialog(); // Jangan tutup dialog utama dulu
-            } else {
-                setErrorMessage(data.message || 'Gagal menukar item. Silakan coba lagi.');
+        // try {
+        //     const response = await fetch(route('redeem.item'), {
+        //         method: 'POST',
+        //         headers: {
+        //             'Content-Type': 'application/json',
+        //             'Accept': 'application/json',
+        //             'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || ''
+        //         },
+        //         body: JSON.stringify({
+        //             item_id: selectedItem.id,
+        //             points_cost: selectedItem.point
+        //         })
+        //     });
+        //     const data = await response.json();
+        //     if (response.ok && data.success) {
+        //         setCurrentTotalPoints(data.total_points);
+        //         setErrorMessage('');
+        //         setShowAddressDialog(true); // Tampilkan dialog alamat setelah sukses
+        //         // handleCloseDialog(); // Jangan tutup dialog utama dulu
+        //     } else {
+        //         setErrorMessage(data.message || 'Gagal menukar item. Silakan coba lagi.');
+        //     }
+        // } catch (err) {
+        //     setErrorMessage('Gagal menukar item. Silakan coba lagi.');
+        //     console.error('Error saat menukar:', err);
+        // }
+
+        Inertia.post(route('redeem.item'), {
+            item_id: selectedItem.id,
+            points_cost: selectedItem.point
+        }, {
+            onSuccess: () => {
+                setCurrentTotalPoints((prev) => prev - selectedItem.point);
+                setShowAddressDialog(true);
+            },
+            onError: (errors) => {
+                setErrorMessage('Gagal menukar item. Silakan coba lagi.');
+                console.error(errors);
             }
-        } catch (err) {
-            setErrorMessage('Gagal menukar item. Silakan coba lagi.');
-            console.error('Error saat menukar:', err);
-        }
+        });
     };
 
     const handleSubmitAddress = async () => {
